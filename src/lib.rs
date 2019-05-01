@@ -5,32 +5,40 @@ use bit_field::BitField;
 use core::ops::Range;
 
 /// Allocator of a bitmap, able to allocate / free bits.
-///
-/// CAP: the bitmap has a total of CAP bits, numbered from 0 to CAP-1 inclusively.
-///
-/// alloc: allocate a free bit.
-/// dealloc: free an allocated bit.
-///
-/// insert: mark bits in the range as allocated (available)
-/// remove: reverse of insert
-///
-/// any: whether there are free bits remaining
-/// test: whether a specific bit is free
 pub trait BitAlloc: Default {
+    /// The bitmap has a total of CAP bits, numbered from 0 to CAP-1 inclusively.
     const CAP: usize;
+
+    /// Allocate a free bit.
     fn alloc(&mut self) -> Option<usize>;
+
+    /// Free an allocated bit.
     fn dealloc(&mut self, key: usize);
+
+    /// Mark bits in the range as unallocated (available)
     fn insert(&mut self, range: Range<usize>);
+
+    /// Reverse of insert
     fn remove(&mut self, range: Range<usize>);
+
+    /// Whether there are free bits remaining
     fn any(&self) -> bool;
+
+    /// Whether a specific bit is free
     fn test(&self, key: usize) -> bool;
 }
 
+/// A bitmap of 256 bits
 pub type BitAlloc256 = BitAllocCascade16<BitAlloc16>;
+/// A bitmap of 4K bits
 pub type BitAlloc4K = BitAllocCascade16<BitAlloc256>;
+/// A bitmap of 64K bits
 pub type BitAlloc64K = BitAllocCascade16<BitAlloc4K>;
+/// A bitmap of 1M bits
 pub type BitAlloc1M = BitAllocCascade16<BitAlloc64K>;
+/// A bitmap of 16M bits
 pub type BitAlloc16M = BitAllocCascade16<BitAlloc1M>;
+/// A bitmap of 256M bits
 pub type BitAlloc256M = BitAllocCascade16<BitAlloc16M>;
 
 /// Implement the bit allocator by segment tree algorithm.
@@ -94,11 +102,12 @@ impl<T: BitAlloc> BitAllocCascade16<T> {
     }
 }
 
+/// A bitmap consisting of only 16 bits.
+/// BitAlloc16 acts as the leaf (except the leaf bits of course) nodes
+/// in the segment trees.
 #[derive(Default)]
 pub struct BitAlloc16(u16);
 
-/// BitAlloc16 acts as the leaf (except the leaf bits of course) nodes
-/// in the segment trees.
 impl BitAlloc for BitAlloc16 {
     const CAP: usize = 16;
 
