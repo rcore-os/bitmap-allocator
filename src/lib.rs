@@ -9,6 +9,9 @@ pub trait BitAlloc: Default {
     /// The bitmap has a total of CAP bits, numbered from 0 to CAP-1 inclusively.
     const CAP: usize;
 
+    /// The default value. Workaround for `const fn new() -> Self`.
+    const DEFAULT: Self;
+
     /// Allocate a free bit.
     fn alloc(&mut self) -> Option<usize>;
 
@@ -50,6 +53,11 @@ pub struct BitAllocCascade16<T: BitAlloc> {
 
 impl<T: BitAlloc> BitAlloc for BitAllocCascade16<T> {
     const CAP: usize = T::CAP * 16;
+
+    const DEFAULT: Self = BitAllocCascade16 {
+        bitset: 0,
+        sub: [T::DEFAULT; 16],
+    };
 
     fn alloc(&mut self) -> Option<usize> {
         if self.any() {
@@ -110,6 +118,8 @@ pub struct BitAlloc16(u16);
 
 impl BitAlloc for BitAlloc16 {
     const CAP: usize = 16;
+
+    const DEFAULT: Self = BitAlloc16(0);
 
     fn alloc(&mut self) -> Option<usize> {
         if self.any() {
