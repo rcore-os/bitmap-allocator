@@ -118,8 +118,22 @@ impl<T: BitAlloc> BitAlloc for BitAllocCascade16<T> {
 
     fn dealloc_contiguous(&mut self, base: usize, size: usize) -> bool {
         let mut success = true;
-        for key in base..base + size {
-            success = self.dealloc(key);
+        let Range { start, end } = base..base + size;
+        assert!(start <= end);
+        assert!(end <= Self::CAP);
+        for i in start / T::CAP..=(end - 1) / T::CAP {
+            let begin = if start / T::CAP == i {
+                start % T::CAP
+            } else {
+                0
+            };
+            let end = if end / T::CAP == i {
+                end % T::CAP
+            } else {
+                T::CAP
+            };
+            success = success && self.sub[i].dealloc_contiguous(begin, end - begin);
+            self.bitset.set_bit(i, !self.sub[i].is_empty());
         }
         success
     }
@@ -218,11 +232,11 @@ impl BitAlloc for BitAlloc16 {
     }
 
     fn dealloc_contiguous(&mut self, base: usize, size: usize) -> bool {
-        let mut success = true;
-        for key in base..base + size {
-            success = self.dealloc(key);
+        if self.0.get_bits(base..base + size) == 0 {
+            self.insert(base..base + size);
+            return true;
         }
-        success
+        false
     }
 
     fn insert(&mut self, range: Range<usize>) {
