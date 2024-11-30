@@ -93,12 +93,9 @@ impl<T: BitAlloc> BitAlloc for BitAllocCascade16<T> {
     }
 
     fn alloc_contiguous(&mut self, size: usize, align_log2: usize) -> Option<usize> {
-        if let Some(base) = find_contiguous(self, Self::CAP, size, align_log2) {
+        find_contiguous(self, Self::CAP, size, align_log2).inspect(|&base| {
             self.remove(base..base + size);
-            Some(base)
-        } else {
-            None
-        }
+        })
     }
 
     fn alloc_contiguous_at(
@@ -107,12 +104,10 @@ impl<T: BitAlloc> BitAlloc for BitAllocCascade16<T> {
         size: usize,
         align_log2: usize,
     ) -> Option<usize> {
-        if check_contiguous(self, base, Self::CAP, size, align_log2) {
+        check_contiguous(self, base, Self::CAP, size, align_log2).then(|| {
             self.remove(base..base + size);
-            Some(base)
-        } else {
-            None
-        }
+            base
+        })
     }
 
     fn dealloc(&mut self, key: usize) -> bool {
@@ -199,12 +194,9 @@ impl BitAlloc for BitAlloc16 {
         }
     }
     fn alloc_contiguous(&mut self, size: usize, align_log2: usize) -> Option<usize> {
-        if let Some(base) = find_contiguous(self, Self::CAP, size, align_log2) {
+        find_contiguous(self, Self::CAP, size, align_log2).inspect(|&base| {
             self.remove(base..base + size);
-            Some(base)
-        } else {
-            None
-        }
+        })
     }
 
     fn alloc_contiguous_at(
@@ -213,14 +205,10 @@ impl BitAlloc for BitAlloc16 {
         size: usize,
         align_log2: usize,
     ) -> Option<usize> {
-        if base % (1 << align_log2) == 0
-            && check_contiguous(self, base, Self::CAP, size, align_log2)
-        {
+        check_contiguous(self, base, Self::CAP, size, align_log2).then(|| {
             self.remove(base..base + size);
-            Some(base)
-        } else {
-            None
-        }
+            base
+        })
     }
 
     fn dealloc(&mut self, key: usize) -> bool {
@@ -270,9 +258,7 @@ fn find_contiguous(
     let mut base = 0;
     // First, we need to make sure that base is aligned.
     if let Some(start) = ba.next(base) {
-        if start != 0 {
-            base = (((start - 1) >> align_log2) + 1) << align_log2;
-        }
+        base = align_up_log2(start, align_log2);
     } else {
         return None;
     }
@@ -312,6 +298,11 @@ fn check_contiguous(
         return false;
     }
 
+    // First, we need to make sure that base is aligned.
+    if !is_aligned_log2(base, align_log2) {
+        return false;
+    }
+
     let mut offset = base;
     while offset < capacity {
         if let Some(next) = ba.next(offset) {
@@ -327,6 +318,14 @@ fn check_contiguous(
         }
     }
     false
+}
+
+fn align_up_log2(base: usize, align_log2: usize) -> usize {
+    (base + ((1 << align_log2) - 1)) & !((1 << align_log2) - 1)
+}
+
+fn is_aligned_log2(base: usize, align_log2: usize) -> bool {
+    (base & ((1 << align_log2) - 1)) == 0
 }
 
 #[cfg(test)]
