@@ -121,8 +121,12 @@ impl<T: BitAlloc> BitAlloc for BitAllocCascade16<T> {
     fn dealloc_contiguous(&mut self, base: usize, size: usize) -> bool {
         let mut success = true;
         let Range { start, end } = base..base + size;
-        assert!(start <= end);
-        assert!(end <= Self::CAP);
+
+        // Check if the range is valid.
+        if end > Self::CAP {
+            return false;
+        }
+
         for i in start / T::CAP..=(end - 1) / T::CAP {
             let begin = if start / T::CAP == i {
                 start % T::CAP
