@@ -38,20 +38,20 @@ pub trait BitAlloc: Default {
     /// Returns true if successful, false if the bits in the range are already free.
     fn dealloc_contiguous(&mut self, base: usize, size: usize) -> bool;
 
-    /// Mark bits in the range as unallocated (available)
+    /// Mark bits in the range as unallocated (available).
     fn insert(&mut self, range: Range<usize>);
 
-    /// Reverse of insert
+    /// Reverse of insert.
     fn remove(&mut self, range: Range<usize>);
 
-    /// Whether there are free bits remaining
+    /// Whether there are free bits remaining.
     #[deprecated = "use `!self.is_empty()` instead"]
     fn any(&self) -> bool;
 
     /// Returns true if no bits is available.
     fn is_empty(&self) -> bool;
 
-    /// Whether a specific bit is free
+    /// Whether a specific bit is free.
     fn test(&self, key: usize) -> bool;
 }
 
@@ -92,7 +92,7 @@ pub type BitAlloc256M = BitAllocCascade16<BitAlloc16M>;
 /// Implement the bit allocator by segment tree algorithm.
 #[derive(Default)]
 pub struct BitAllocCascade16<T: BitAlloc> {
-    /// for each bit, 1 indicates available, 0 indicates inavailable
+    /// For each bit, 1 indicates available, 0 indicates unavailable.
     bitset: u16,
     sub: [T; 16],
 }
@@ -143,7 +143,7 @@ impl<T: BitAlloc> BitAlloc for BitAllocCascade16<T> {
         let mut success = true;
         let Range { start, end } = base..base + size;
 
-        // Check if the range is valid.
+        // Prevent out-of-bounds access by ensuring the deallocation range fits within capacity.
         if end > Self::CAP {
             return false;
         }
