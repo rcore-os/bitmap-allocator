@@ -149,17 +149,8 @@ impl<T: BitAlloc> BitAlloc for BitAllocCascade16<T> {
         }
 
         for i in start / T::CAP..=(end - 1) / T::CAP {
-            let begin = if start / T::CAP == i {
-                start % T::CAP
-            } else {
-                0
-            };
-            let end = if end / T::CAP == i {
-                end % T::CAP
-            } else {
-                T::CAP
-            };
-            success = success && self.sub[i].dealloc_contiguous(begin, end - begin);
+            let (begin, local_end) = local_range(start, end, T::CAP, i);
+            success = success && self.sub[i].dealloc_contiguous(begin, local_end - begin);
             self.bitset.set_bit(i, !self.sub[i].is_empty());
         }
         success
@@ -199,17 +190,8 @@ impl<T: BitAlloc> BitAllocCascade16<T> {
         assert!(start <= end);
         assert!(end <= Self::CAP);
         for i in start / T::CAP..=(end - 1) / T::CAP {
-            let begin = if start / T::CAP == i {
-                start % T::CAP
-            } else {
-                0
-            };
-            let end = if end / T::CAP == i {
-                end % T::CAP
-            } else {
-                T::CAP
-            };
-            f(&mut self.sub[i], begin..end);
+            let (begin, local_end) = local_range(start, end, T::CAP, i);
+            f(&mut self.sub[i], begin..local_end);
             self.bitset.set_bit(i, !self.sub[i].is_empty());
         }
     }
@@ -305,6 +287,12 @@ impl BitAlloc for BitAlloc16 {
     fn next(&self, key: usize) -> Option<usize> {
         (key..Self::CAP).find(|&i| self.0.get_bit(i))
     }
+}
+
+fn local_range(start: usize, end: usize, cap: usize, i: usize) -> (usize, usize) {
+    let begin = if start / cap == i { start % cap } else { 0 };
+    let local_end = if end / cap == i { end % cap } else { cap };
+    (begin, local_end)
 }
 
 fn find_contiguous(
