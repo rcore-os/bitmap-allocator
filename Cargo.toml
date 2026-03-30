@@ -10,5 +10,9 @@ repository = "https://github.com/rcore-os/bitmap-allocator"
 keywords = ["bitmap", "allocator", "memory"]
 categories = ["memory-management", "no-std"]
 
+[features]
+default = []
+alloc = []
+
 [dependencies]
 bit_field = "0.10"
