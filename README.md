@@ -24,3 +24,15 @@ ba.dealloc(0);
 ba.dealloc(1);
 ba.dealloc(8);
 ```
+
+## Large allocator note
+
+The larger by-value aliases are hidden behind the `large-value-types` feature:
+`BitAlloc16M` and `BitAlloc256M`.
+
+Even with that feature enabled, those aliases are still plain by-value Rust
+types. Starting from `BitAlloc16M`, they become large enough that constructing
+them as ordinary local variables may overflow a typical thread stack.
+
+For large-capacity allocators, prefer caller-managed non-stack storage instead
+of writing `let mut ba = BitAlloc16M::default();` on a small stack.

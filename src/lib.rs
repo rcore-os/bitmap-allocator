@@ -84,10 +84,25 @@ pub type BitAlloc4K = BitAllocCascade16<BitAlloc256>;
 pub type BitAlloc64K = BitAllocCascade16<BitAlloc4K>;
 /// A bitmap of 1M bits
 pub type BitAlloc1M = BitAllocCascade16<BitAlloc64K>;
-/// A bitmap of 16M bits
-pub type BitAlloc16M = BitAllocCascade16<BitAlloc1M>;
-/// A bitmap of 256M bits
-pub type BitAlloc256M = BitAllocCascade16<BitAlloc16M>;
+#[cfg(feature = "large-value-types")]
+type BitAlloc16MValue = BitAllocCascade16<BitAlloc1M>;
+#[cfg(feature = "large-value-types")]
+type BitAlloc256MValue = BitAllocCascade16<BitAlloc16MValue>;
+/// A bitmap of 16M bits.
+///
+/// This is still a plain by-value type. Constructing it as a local variable on
+/// a small thread stack may overflow the stack.
+///
+/// This alias is intentionally gated behind the `large-value-types` feature.
+#[cfg(feature = "large-value-types")]
+pub type BitAlloc16M = BitAlloc16MValue;
+/// A bitmap of 256M bits.
+///
+/// This is still a plain by-value type. Prefer non-stack storage for this type.
+///
+/// This alias is intentionally gated behind the `large-value-types` feature.
+#[cfg(feature = "large-value-types")]
+pub type BitAlloc256M = BitAlloc256MValue;
 
 /// Implement the bit allocator by segment tree algorithm.
 #[derive(Default)]
@@ -393,6 +408,8 @@ fn is_aligned_log2(base: usize, align_log2: usize) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[cfg(feature = "large-value-types")]
+    use core::mem::size_of;
 
     #[test]
     fn bitalloc16() {
@@ -425,17 +442,17 @@ mod tests {
         assert!(!ba.dealloc(0));
 
         assert_eq!(ba.alloc(), Some(0));
-        assert_eq!(ba.test(0), false);
+        assert!(!ba.test(0));
         assert_eq!(ba.alloc_contiguous(None, 2, 0), Some(1));
-        assert_eq!(ba.test(1), false);
-        assert_eq!(ba.test(2), false);
+        assert!(!ba.test(1));
+        assert!(!ba.test(2));
 
         // Test alloc alignment.
         assert_eq!(ba.alloc_contiguous(None, 2, 1), Some(4));
         // Bit 3 is free due to alignment.
-        assert_eq!(ba.test(3), true);
-        assert_eq!(ba.test(4), false);
-        assert_eq!(ba.test(5), false);
+        assert!(ba.test(3));
+        assert!(!ba.test(4));
+        assert!(!ba.test(5));
         assert_eq!(ba.next(5), Some(6));
 
         // Test alloc alignment.
@@ -534,5 +551,15 @@ mod tests {
         for i in 4096 - 48..4096 - 16 {
             assert!(ba.dealloc(i));
         }
+    }
+
+    #[cfg(feature = "large-value-types")]
+    #[test]
+    fn large_allocator_values_are_large_stack_objects() {
+        assert!(size_of::<BitAlloc1M>() > 128 * 1024);
+        assert!(size_of::<BitAlloc16M>() > 2 * 1024 * 1024);
+        assert!(size_of::<BitAlloc256M>() > 32 * 1024 * 1024);
+        assert!(size_of::<BitAlloc16M>() > size_of::<BitAlloc1M>());
+        assert!(size_of::<BitAlloc256M>() > size_of::<BitAlloc16M>());
     }
 }
