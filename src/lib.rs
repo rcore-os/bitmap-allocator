@@ -159,7 +159,7 @@ impl<T: BitAlloc> BitAlloc for BitAllocCascade16<T> {
             } else {
                 T::CAP
             };
-            is_successful &= self.sub[i].dealloc_contiguous(begin, end - begin);
+            is_successful = is_successful && self.sub[i].dealloc_contiguous(begin, end - begin);
             self.bitset.set_bit(i, !self.sub[i].is_empty());
         }
         is_successful
