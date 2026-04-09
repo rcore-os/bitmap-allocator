@@ -153,7 +153,8 @@ impl<T: BitAlloc> BitAlloc for BitAllocCascade16<T> {
 
         for i in start / T::CAP..=(end - 1) / T::CAP {
             let (begin, local_end) = local_range(start, end, T::CAP, i);
-            is_successful = is_successful && self.sub[i].dealloc_contiguous(begin, local_end - begin);
+            is_successful =
+                is_successful && self.sub[i].dealloc_contiguous(begin, local_end - begin);
             self.bitset.set_bit(i, !self.sub[i].is_empty());
         }
         is_successful
