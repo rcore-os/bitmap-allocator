@@ -147,6 +147,9 @@ impl<T: BitAlloc> BitAlloc for BitAllocCascade16<T> {
         if end > Self::CAP {
             return false;
         }
+        if start == end {
+            return true;
+        }
 
         for i in start / T::CAP..=(end - 1) / T::CAP {
             let (begin, local_end) = local_range(start, end, T::CAP, i);
@@ -189,6 +192,9 @@ impl<T: BitAlloc> BitAllocCascade16<T> {
         let Range { start, end } = range;
         assert!(start <= end);
         assert!(end <= Self::CAP);
+        if start == end {
+            return;
+        }
         for i in start / T::CAP..=(end - 1) / T::CAP {
             let (begin, local_end) = local_range(start, end, T::CAP, i);
             f(&mut self.sub[i], begin..local_end);
@@ -522,5 +528,24 @@ mod tests {
         for i in 4096 - 48..4096 - 16 {
             assert!(ba.dealloc(i));
         }
+    }
+
+    #[test]
+    fn bitalloc_empty_range_noop() {
+        let mut ba16 = BitAlloc16::default();
+        ba16.insert(0..BitAlloc16::CAP);
+        assert!(ba16.dealloc_contiguous(0, 0));
+        ba16.insert(0..0);
+        ba16.remove(0..0);
+        assert_eq!(ba16.next(0), Some(0));
+
+        let mut ba4k = BitAlloc4K::default();
+        ba4k.insert(0..BitAlloc4K::CAP);
+        assert!(ba4k.dealloc_contiguous(0, 0));
+        ba4k.remove(1..2);
+        ba4k.insert(0..0);
+        ba4k.remove(0..0);
+        assert_eq!(ba4k.next(0), Some(0));
+        assert_eq!(ba4k.next(1), Some(2));
     }
 }
