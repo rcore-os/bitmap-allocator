@@ -48,7 +48,7 @@ pub trait BitAlloc: Default {
     #[deprecated = "use `!self.is_empty()` instead"]
     fn any(&self) -> bool;
 
-    /// Returns true if no bits is available.
+    /// Returns true if no bits are available.
     fn is_empty(&self) -> bool;
 
     /// Whether a specific bit is free.
@@ -92,7 +92,7 @@ pub type BitAlloc256M = BitAllocCascade16<BitAlloc16M>;
 /// Implement the bit allocator by segment tree algorithm.
 #[derive(Default)]
 pub struct BitAllocCascade16<T: BitAlloc> {
-    /// For each bit, 1 indicates available, 0 indicates unavailable.
+    /// For each sub-allocator, the corresponding bit is 1 when it has free bits available.
     bitset: u16,
     sub: [T; 16],
 }
