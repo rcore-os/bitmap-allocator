@@ -1,8 +1,20 @@
 #![no_std]
 #![doc = include_str!("../README.md")]
 
+#[cfg(feature = "alloc")]
+extern crate alloc;
+
 use bit_field::BitField;
 use core::ops::Range;
+
+#[cfg(feature = "alloc")]
+pub mod heap;
+
+#[cfg(feature = "alloc")]
+pub use heap::{
+    BitAllocRuntime, HeapBitAlloc16M, HeapBitAlloc1M, HeapBitAlloc256, HeapBitAlloc256M,
+    HeapBitAlloc4K, HeapBitAlloc64K,
+};
 
 /// Allocator of a bitmap, able to allocate / free bits.
 pub trait BitAlloc: Default {
@@ -425,17 +437,17 @@ mod tests {
         assert!(!ba.dealloc(0));
 
         assert_eq!(ba.alloc(), Some(0));
-        assert_eq!(ba.test(0), false);
+        assert!(!ba.test(0));
         assert_eq!(ba.alloc_contiguous(None, 2, 0), Some(1));
-        assert_eq!(ba.test(1), false);
-        assert_eq!(ba.test(2), false);
+        assert!(!ba.test(1));
+        assert!(!ba.test(2));
 
         // Test alloc alignment.
         assert_eq!(ba.alloc_contiguous(None, 2, 1), Some(4));
         // Bit 3 is free due to alignment.
-        assert_eq!(ba.test(3), true);
-        assert_eq!(ba.test(4), false);
-        assert_eq!(ba.test(5), false);
+        assert!(ba.test(3));
+        assert!(!ba.test(4));
+        assert!(!ba.test(5));
         assert_eq!(ba.next(5), Some(6));
 
         // Test alloc alignment.

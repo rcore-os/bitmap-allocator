@@ -24,3 +24,9 @@ ba.dealloc(0);
 ba.dealloc(1);
 ba.dealloc(8);
 ```
+
+## Experimental alloc-backed variants
+
+When the `alloc` feature is enabled, the crate also exposes experimental
+heap-backed variants such as `HeapBitAlloc16M` and `HeapBitAlloc256M` for
+large-capacity use cases.
