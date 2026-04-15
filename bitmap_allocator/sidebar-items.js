@@ -1,0 +1,1 @@
+window.SIDEBAR_ITEMS = {"struct":["BitAlloc16","BitAllocCascade16"],"trait":["BitAlloc"],"type":["BitAlloc16M","BitAlloc1M","BitAlloc256","BitAlloc256M","BitAlloc4K","BitAlloc64K"]};
