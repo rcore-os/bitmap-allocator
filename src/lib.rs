@@ -84,9 +84,14 @@ pub type BitAlloc4K = BitAllocCascade16<BitAlloc256>;
 pub type BitAlloc64K = BitAllocCascade16<BitAlloc4K>;
 /// A bitmap of 1M bits
 pub type BitAlloc1M = BitAllocCascade16<BitAlloc64K>;
-/// A bitmap of 16M bits
+/// A bitmap of 16M bits.
+///
+/// This is still a plain by-value type. Constructing it as a local variable on
+/// a small thread stack may overflow the stack.
 pub type BitAlloc16M = BitAllocCascade16<BitAlloc1M>;
-/// A bitmap of 256M bits
+/// A bitmap of 256M bits.
+///
+/// This is still a plain by-value type. Prefer non-stack storage for this type.
 pub type BitAlloc256M = BitAllocCascade16<BitAlloc16M>;
 
 /// Implement the bit allocator by segment tree algorithm.
@@ -420,7 +425,6 @@ mod tests {
         for key in 0..16 {
             assert!(ba.dealloc(key));
         }
-
         assert!(!ba.dealloc(10));
         assert!(!ba.dealloc(0));
 

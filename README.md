@@ -24,3 +24,13 @@ ba.dealloc(0);
 ba.dealloc(1);
 ba.dealloc(8);
 ```
+
+## Large allocator note
+
+The larger aliases in this crate are still plain by-value Rust types.
+Starting from `BitAlloc16M`, those values become large enough that constructing
+them as ordinary local variables may overflow a typical thread stack.
+
+For large-capacity allocators, prefer storing them in static memory or other
+caller-managed non-stack storage instead of writing `let mut ba =
+BitAlloc16M::default();` on a small stack.
